@@ -35,7 +35,7 @@ class ExecutionConfig:
     allow_live: bool = False
 
     @classmethod
-    def from_env(cls) -> "ExecutionConfig":
+    def from_env(cls) -> ExecutionConfig:
         overrides: dict[str, object] = {}
         for f in fields(cls):
             env_var = _ENV_PREFIX + f.name.upper()
