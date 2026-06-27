@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Desk — live run view</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">◉</span> THE DESK <span class="brand-sub">// agent run view</span></div>
+    <form id="run-form" class="run-form" autocomplete="off">
+      <input id="ticker" name="ticker" placeholder="TICKER" aria-label="Ticker symbol" value="NVDA" />
+      <button id="run-btn" type="submit">Run analysis</button>
+    </form>
+    <div class="acct">
+      <span class="acct-label">paper equity</span>
+      <span id="equity" class="acct-value">—</span>
+      <span id="paper-pill" class="pill pill-paper">PAPER</span>
+    </div>
+  </header>
+
+  <div class="status-line" id="status">Idle — enter a ticker and run.</div>
+
+  <main class="grid">
+    <!-- LEFT: pipeline relay -->
+    <section class="rail" aria-label="Pipeline">
+      <h2 class="rail-head">Pipeline</h2>
+      <ol id="relay" class="relay"></ol>
+    </section>
+
+    <!-- CENTER: live reasoning -->
+    <section class="stream" aria-label="Reasoning">
+      <h2 class="stream-head">Thought process</h2>
+      <div id="stream" class="stream-body">
+        <p class="empty">The active specialist's reasoning streams here as the pipeline runs.</p>
+      </div>
+    </section>
+
+    <!-- RIGHT: decision + trade + portfolio -->
+    <aside class="panel" aria-label="Decision and portfolio">
+      <h2 class="panel-head">Decision</h2>
+      <div id="decision" class="decision">
+        <span class="rating-chip rating-pending" id="rating">—</span>
+        <div id="order" class="order">No order yet.</div>
+      </div>
+      <pre id="decision-text" class="decision-text"></pre>
+
+      <h2 class="panel-head">Positions</h2>
+      <table class="ptable"><tbody id="positions"><tr><td class="muted">flat</td></tr></tbody></table>
+
+      <h2 class="panel-head">Recent orders</h2>
+      <table class="ptable"><tbody id="orders"><tr><td class="muted">none</td></tr></tbody></table>
+    </aside>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
