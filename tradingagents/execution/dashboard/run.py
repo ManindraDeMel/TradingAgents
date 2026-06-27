@@ -32,8 +32,7 @@ def run_events(
     final_state: dict = {}
     for kind, payload in chunk_source(ticker, date):
         if kind == "chunk":
-            for ev in events_from_state(payload, seen):
-                yield ev
+            yield from events_from_state(payload, seen)
         elif kind == "final":
             final_state = payload
 

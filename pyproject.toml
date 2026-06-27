@@ -49,17 +49,23 @@ bedrock = [
 alpaca = [
     "alpaca-py>=0.30",
 ]
+# Real-time run-view dashboard (Flask). Optional: pip install "tradingagents[dashboard]".
+dashboard = [
+    "flask>=3.0",
+]
 
 [project.scripts]
 tradingagents = "cli.main:app"
 trading-loop = "tradingagents.execution.loop:main"
 trade-once = "tradingagents.execution.trade_once:main"
+trading-dashboard = "tradingagents.execution.dashboard.app:main"
 
 [tool.setuptools.packages.find]
 include = ["tradingagents*", "cli*"]
 
 [tool.setuptools.package-data]
 cli = ["static/*"]
+"tradingagents.execution.dashboard" = ["templates/*", "static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
