@@ -52,6 +52,8 @@ alpaca = [
 
 [project.scripts]
 tradingagents = "cli.main:app"
+trading-loop = "tradingagents.execution.loop:main"
+trade-once = "tradingagents.execution.trade_once:main"
 
 [tool.setuptools.packages.find]
 include = ["tradingagents*", "cli*"]
