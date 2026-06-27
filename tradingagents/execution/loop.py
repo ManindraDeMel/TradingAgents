@@ -98,25 +98,38 @@ def main(argv: list[str] | None = None) -> None:
 
     from tradingagents.dataflows.symbol_utils import normalize_symbol
 
-    from .screener import rank_by_volatility
+    from .screener import _default_screener_client, fetch_alpaca_candidates, rank_by_volatility
     from .trade_once import _default_broker, _default_price, _default_rating
 
     parser = argparse.ArgumentParser(
         prog="trading-loop",
         description="Run one autonomous trading cycle: screen by volatility, re-evaluate, place paper orders.",
     )
-    parser.add_argument("--tickers", required=True,
-                        help="Comma-separated candidate universe to screen by volatility.")
+    parser.add_argument("--tickers", default=None,
+                        help="Comma-separated universe; omit to auto-screen Alpaca most-actives + movers.")
     parser.add_argument("--date", default=datetime.datetime.now().strftime("%Y-%m-%d"))
+    parser.add_argument("--ignore-calendar", action="store_true",
+                        help="Run even if today is not a trading day.")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     cfg = ExecutionConfig.from_env()
-    candidates = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    broker = _default_broker(cfg)
 
     def history_fn(symbol: str) -> list[float]:
         import yfinance as yf
         return yf.Ticker(normalize_symbol(symbol)).history(period="1mo")["Close"].tolist()
+
+    if args.tickers:
+        universe = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+
+        def candidates_fn():
+            return universe
+    else:
+        screener_client = _default_screener_client()
+
+        def candidates_fn():
+            return fetch_alpaca_candidates(screener_client, top=max(cfg.top_k * 3, 20))
 
     ledger_path = os.path.join(
         os.path.expanduser("~"), ".tradingagents", "execution", "ledger.jsonl"
@@ -124,10 +137,11 @@ def main(argv: list[str] | None = None) -> None:
     run_cycle(
         args.date,
         cfg=cfg,
-        broker=_default_broker(cfg),
+        broker=broker,
         rating_fn=_default_rating,
-        screen_fn=lambda: rank_by_volatility(candidates, history_fn, cfg.top_k),
+        screen_fn=lambda: rank_by_volatility(candidates_fn(), history_fn, cfg.top_k),
         price_fn=_default_price,
+        calendar_fn=None if args.ignore_calendar else broker.is_trading_day,
         ledger=Ledger(ledger_path),
     )
 

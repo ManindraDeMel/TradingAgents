@@ -74,6 +74,15 @@ class AlpacaBroker:
             return None
         return str(getattr(order, "id", "")) or None
 
+    def is_trading_day(self, date) -> bool:
+        import datetime as _dt
+
+        from alpaca.trading.requests import GetCalendarRequest
+
+        day = _dt.date.fromisoformat(date) if isinstance(date, str) else date
+        calendar = self._client.get_calendar(GetCalendarRequest(start=day, end=day))
+        return len(calendar) > 0
+
     @staticmethod
     def _to_position(p) -> Position:
         from alpaca.trading.enums import PositionSide

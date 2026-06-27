@@ -81,3 +81,15 @@ def test_submit_sell_maps_to_sell_side():
     client.submit_order.return_value = SimpleNamespace(id="o1")
     _broker(client).submit_order(OrderIntent("AAPL", "sell", 5, "AAPL:c:1"))
     assert client.submit_order.call_args.kwargs["order_data"].side == OrderSide.SELL
+
+
+def test_is_trading_day_true_when_calendar_nonempty():
+    client = MagicMock()
+    client.get_calendar.return_value = [SimpleNamespace(date="2026-06-26")]
+    assert AlpacaBroker(client=client, paper=True).is_trading_day("2026-06-26") is True
+
+
+def test_is_trading_day_false_when_calendar_empty():
+    client = MagicMock()
+    client.get_calendar.return_value = []
+    assert AlpacaBroker(client=client, paper=True).is_trading_day("2026-06-27") is False
