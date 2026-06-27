@@ -32,7 +32,9 @@ def run_cycle(
                 "kill_switch": False}
 
     account = broker.account()
-    held = {p.symbol for p in broker.positions()}
+    positions = broker.positions()
+    held = {p.symbol for p in positions}
+    gross_exposure = sum(abs(p.market_value) for p in positions)
     baseline = baseline_equity if baseline_equity is not None else account.equity
     if ledger is not None:
         ledger.snapshot_equity(account.equity, date)
@@ -43,24 +45,30 @@ def run_cycle(
             "Daily-loss kill switch tripped (baseline=%.2f current=%.2f); halting new entries.",
             baseline, account.equity,
         )
-    # Gross-exposure cap (cfg.max_gross_exposure_pct) is not yet enforced here.
-    if cfg.max_gross_exposure_pct < 1.0:
-        logger.info("max_gross_exposure_pct=%.2f is configured but not yet enforced.",
-                    cfg.max_gross_exposure_pct)
 
     # Always re-evaluate held names, even when the screen doesn't surface them.
     tickers = list(dict.fromkeys(list(screen_fn()) + sorted(held)))
 
     all_intents = []
+    prices: dict[str, float] = {}
     for ticker in tickers:
         rating = rating_fn(ticker, date)
         price = price_fn(ticker)
+        prices[ticker] = price
         position = broker.get_position(ticker)
         all_intents.extend(
             position_policy.decide(ticker, rating, position, account, price, cfg, cycle_id)
         )
 
-    allowed = risk.apply(all_intents, held_symbols=held, cfg=cfg, kill_switch=tripped)
+    allowed = risk.apply(
+        all_intents,
+        held_symbols=held,
+        cfg=cfg,
+        kill_switch=tripped,
+        gross_exposure=gross_exposure,
+        equity=account.equity,
+        notional_fn=lambda intent: intent.qty * prices[intent.symbol],
+    )
     orders = 0
     for intent in allowed:
         order_id = broker.submit_order(intent)

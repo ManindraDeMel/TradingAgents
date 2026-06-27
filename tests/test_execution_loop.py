@@ -58,3 +58,17 @@ def test_ledger_records_equity_and_orders(tmp_path):
     _cycle(broker, screen=["AAPL"], rating={"AAPL": "Buy"}, ledger=led)
     types = [r["type"] for r in led.read()]
     assert "equity" in types and "order" in types and "cycle" in types
+
+
+def test_gross_exposure_cap_limits_orders():
+    broker = FakeBroker(equity=100_000.0, cash=100_000.0)
+    cfg = ExecutionConfig(per_name_pct=0.05, max_concurrent_positions=10, max_gross_exposure_pct=0.10)
+    summary = run_cycle(
+        "2026-06-27",
+        cfg=cfg,
+        broker=broker,
+        rating_fn=lambda ticker, date: "Buy",
+        screen_fn=lambda: ["A", "B", "C"],   # each $5k notional, $10k limit -> 2 fit
+        price_fn=lambda symbol: 100.0,
+    )
+    assert summary["orders"] == 2
