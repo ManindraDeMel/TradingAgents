@@ -268,6 +268,52 @@ ta = TradingAgentsGraph(config=config)
 _, decision = ta.propagate("NVDA", "2026-01-15")
 ```
 
+## Automated Paper Trading
+
+Beyond a single analysis, TradingAgents can place its decisions on an Alpaca paper account and let you watch them happen in real time. Both pieces are optional installs, so the core stays lean:
+
+```bash
+pip install ".[alpaca,dashboard]"
+```
+
+Add Alpaca paper keys and an LLM provider to `.env`:
+
+```bash
+ALPACA_API_KEY=...
+ALPACA_SECRET_KEY=...
+TRADINGAGENTS_LLM_PROVIDER=anthropic
+```
+
+### One ticker, one order
+
+This runs the full agent pipeline for a single ticker and submits the matching order to your Alpaca paper account:
+
+```bash
+trade-once NVDA
+```
+
+The rating becomes a position: Buy and Overweight open a long, Underweight and Sell open a short, and Hold stays flat. Size is a configurable fraction of equity. Paper trading is the default, and real money trading stays gated behind an explicit opt in.
+
+### The autonomous loop
+
+This runs one full cycle. It screens a universe by realised volatility, reevaluates every name plus anything already held, applies the risk limits (a daily loss kill switch, a cap on how many positions can be open at once, and a gross exposure cap), submits the resulting orders, and records everything to an append only ledger under `~/.tradingagents/execution/`.
+
+```bash
+trading-loop
+```
+
+With no arguments it screens the Alpaca most actives and movers automatically; you can also hand it your own ticker list. It skips days the market is closed using the Alpaca calendar, so a weekday schedule is safe. Tune the behavior with `TRADINGAGENTS_EXEC_*` variables: the per name fraction of equity, the maximum number of concurrent positions, the gross exposure cap, the daily loss limit, and how many names to screen.
+
+### Live run view
+
+A local web app streams the pipeline as it runs, so you can watch each specialist activate, read its reasoning as it lands, and see the final decision and the order it places, next to a live equity and positions panel:
+
+```bash
+trading-dashboard
+```
+
+Open `http://127.0.0.1:8765`, type a ticker, and start a run. Setup, scheduling, and the full option list live in the `docs/` directory.
+
 ## Reproducibility
 
 TradingAgents is LLM-driven, so two runs of the same ticker and date can differ. This is expected for a research tool built on language models, not a defect. The variation comes from a few distinct sources, and it helps to separate them.
